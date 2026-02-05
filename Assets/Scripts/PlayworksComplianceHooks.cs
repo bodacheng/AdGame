@@ -18,6 +18,12 @@ public sealed class PlayworksComplianceHooks : MonoBehaviour
     {
         // LP3007 custom event
         Analytics.LogEvent("session_start", 1);
+
+        // Auto-bootstrap a simple playable loop in SampleScene.
+        if (GetComponent<SimpleDodgeGame>() == null)
+        {
+            gameObject.AddComponent<SimpleDodgeGame>();
+        }
     }
 
     // Bind this to your CTA button OnClick.

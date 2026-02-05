@@ -1,0 +1,17 @@
+{
+  "ignores": [],
+  "groups": [
+    [
+      "/Users/nettest/AdGame2/LunaTemp/stage3/processed-scripts/Assets/Scripts/PlayworksComplianceHooks.cs"
+    ],
+    [
+      "/Users/nettest/7.0.0/pipeline/templates/LunaCompiler/Scripts/Properties/AssemblyInfo.cs"
+    ],
+    [
+      "/Users/nettest/7.0.0/pipeline/templates/LunaCompiler/Scripts/Sources/OtherDummyScript.cs"
+    ],
+    [
+      "/Users/nettest/7.0.0/pipeline/templates/LunaCompiler/Scripts/obj/Debug/.NETFramework,Version=v4.7.AssemblyAttributes.cs"
+    ]
+  ]
+}

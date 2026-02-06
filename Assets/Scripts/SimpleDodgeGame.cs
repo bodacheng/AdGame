@@ -20,6 +20,8 @@ public sealed class SimpleDodgeGame : MonoBehaviour
     [Header("Play Area")]
     [SerializeField] private float sidePadding = 0.5f;
     [SerializeField] private float despawnPadding = 1f;
+    [Header("Rendering")]
+    [SerializeField] private Material spriteMaterial;
 
     private sealed class Obstacle
     {
@@ -38,6 +40,7 @@ public sealed class SimpleDodgeGame : MonoBehaviour
     }
 
     private static Sprite gameplaySprite;
+    private static Texture2D gameplayTexture;
 
     private readonly List<Obstacle> obstacles = new List<Obstacle>();
 
@@ -162,6 +165,10 @@ public sealed class SimpleDodgeGame : MonoBehaviour
         renderer.sprite = GetGameplaySprite();
         renderer.color = new Color(1f, 0.4f, 0.2f, 1f);
         renderer.sortingOrder = 8;
+        if (spriteMaterial != null)
+        {
+            renderer.material = spriteMaterial;
+        }
 
         obstacles.Add(new Obstacle(obstacleObject, radius, speed));
     }
@@ -255,6 +262,10 @@ public sealed class SimpleDodgeGame : MonoBehaviour
         playerRenderer.sprite = GetGameplaySprite();
         playerRenderer.color = new Color(0.2f, 0.85f, 1f, 1f);
         playerRenderer.sortingOrder = 10;
+        if (spriteMaterial != null)
+        {
+            playerRenderer.material = spriteMaterial;
+        }
     }
 
     private float GetGameplayZ()
@@ -270,12 +281,21 @@ public sealed class SimpleDodgeGame : MonoBehaviour
             return gameplaySprite;
         }
 
-        Texture2D white = Texture2D.whiteTexture;
+        if (gameplayTexture == null)
+        {
+            gameplayTexture = new Texture2D(2, 2);
+            gameplayTexture.SetPixel(0, 0, Color.white);
+            gameplayTexture.SetPixel(1, 0, Color.white);
+            gameplayTexture.SetPixel(0, 1, Color.white);
+            gameplayTexture.SetPixel(1, 1, Color.white);
+            gameplayTexture.Apply();
+        }
+
         gameplaySprite = Sprite.Create(
-            white,
-            new Rect(0f, 0f, white.width, white.height),
+            gameplayTexture,
+            new Rect(0f, 0f, gameplayTexture.width, gameplayTexture.height),
             new Vector2(0.5f, 0.5f),
-            white.width);
+            gameplayTexture.width);
         return gameplaySprite;
     }
 

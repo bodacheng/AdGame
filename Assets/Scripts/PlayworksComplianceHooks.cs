@@ -16,10 +16,17 @@ public sealed class PlayworksComplianceHooks : MonoBehaviour
 
     private void Start()
     {
-        // Auto-bootstrap a simple playable loop in SampleScene.
+        // Auto-bootstrap fallback if the scene is missing the gameplay component.
         if (GetComponent<SimpleDodgeGame>() == null)
         {
-            gameObject.AddComponent<SimpleDodgeGame>();
+            try
+            {
+                gameObject.AddComponent<SimpleDodgeGame>();
+            }
+            catch (System.Exception exception)
+            {
+                Debug.LogError("Failed to add SimpleDodgeGame: " + exception.Message);
+            }
         }
 
         // LP3007 custom event

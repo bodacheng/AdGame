@@ -1,6 +1,6 @@
 if ( TRACE ) { TRACE( JSON.parse( '["PlayworksComplianceHooks#init","PlayworksComplianceHooks#Start","PlayworksComplianceHooks#TriggerInstall","PlayworksComplianceHooks#TriggerGameEnded","SimpleDodgeGame#GetGameplaySprite","SimpleDodgeGame#HasTouchBegan","SimpleDodgeGame#init","SimpleDodgeGame#Awake","SimpleDodgeGame#Update","SimpleDodgeGame#OnDestroy","SimpleDodgeGame#HandlePlayerMovement","SimpleDodgeGame#HandleSpawning","SimpleDodgeGame#SpawnObstacle","SimpleDodgeGame#UpdateObstaclesAndCollision","SimpleDodgeGame#HandleLose","SimpleDodgeGame#ResetRun","SimpleDodgeGame#ClearObstacles","SimpleDodgeGame#UpdateBounds","SimpleDodgeGame#CreatePlayer","SimpleDodgeGame#GetGameplayZ","SimpleDodgeGame#TryGetPointerWorldX","SimpleDodgeGame.Obstacle#ctor"]' ) ); }
 /**
- * @version 1.0.9532.32070
+ * @version 1.0.9533.26446
  * @copyright anton
  * @compiler Bridge.NET 17.9.42-luna
  */
@@ -36,18 +36,23 @@ if ( TRACE ) { TRACE( "PlayworksComplianceHooks#init", this ); }
             Start: function () {
 if ( TRACE ) { TRACE( "PlayworksComplianceHooks#Start", this ); }
 
-                // Auto-bootstrap a simple playable loop in SampleScene.
+                // Auto-bootstrap fallback if the scene is missing the gameplay component.
                 if (UnityEngine.MonoBehaviour.op_Equality(this.GetComponent(SimpleDodgeGame), null)) {
-                    this.gameObject.AddComponent(SimpleDodgeGame);
+                    try {
+                        this.gameObject.AddComponent(SimpleDodgeGame);
+                    } catch (exception) {
+                        exception = System.Exception.create(exception);
+                        UnityEngine.Debug.LogError$2("Failed to add SimpleDodgeGame: " + (exception.Message || ""));
+                    }
                 }
 
                 // LP3007 custom event
                 // Keep gameplay initialization resilient even if analytics is unavailable in preview/runtime.
                 try {
                     Luna.Unity.Analytics.LogEvent$1("session_start", 1);
-                } catch (exception) {
-                    exception = System.Exception.create(exception);
-                    UnityEngine.Debug.LogWarning$1("Analytics.LogEvent(session_start) failed: " + (exception.Message || ""));
+                } catch (exception1) {
+                    exception1 = System.Exception.create(exception1);
+                    UnityEngine.Debug.LogWarning$1("Analytics.LogEvent(session_start) failed: " + (exception1.Message || ""));
                 }
             },
             /*PlayworksComplianceHooks.Start end.*/
@@ -87,7 +92,8 @@ if ( TRACE ) { TRACE( "PlayworksComplianceHooks#TriggerGameEnded", this ); }
         inherits: [UnityEngine.MonoBehaviour],
         statics: {
             fields: {
-                gameplaySprite: null
+                gameplaySprite: null,
+                gameplayTexture: null
             },
             methods: {
                 /*SimpleDodgeGame.GetGameplaySprite:static start.*/
@@ -98,8 +104,16 @@ if ( TRACE ) { TRACE( "SimpleDodgeGame#GetGameplaySprite", this ); }
                         return SimpleDodgeGame.gameplaySprite;
                     }
 
-                    var white = UnityEngine.Texture2D.whiteTexture;
-                    SimpleDodgeGame.gameplaySprite = UnityEngine.Sprite.Create$1(white, new UnityEngine.Rect.$ctor1(0.0, 0.0, white.width, white.height), new pc.Vec2( 0.5, 0.5 ), white.width);
+                    if (SimpleDodgeGame.gameplayTexture == null) {
+                        SimpleDodgeGame.gameplayTexture = new UnityEngine.Texture2D.$ctor1(2, 2);
+                        SimpleDodgeGame.gameplayTexture.SetPixel(0, 0, new pc.Color( 1, 1, 1, 1 ));
+                        SimpleDodgeGame.gameplayTexture.SetPixel(1, 0, new pc.Color( 1, 1, 1, 1 ));
+                        SimpleDodgeGame.gameplayTexture.SetPixel(0, 1, new pc.Color( 1, 1, 1, 1 ));
+                        SimpleDodgeGame.gameplayTexture.SetPixel(1, 1, new pc.Color( 1, 1, 1, 1 ));
+                        SimpleDodgeGame.gameplayTexture.Apply();
+                    }
+
+                    SimpleDodgeGame.gameplaySprite = UnityEngine.Sprite.Create$1(SimpleDodgeGame.gameplayTexture, new UnityEngine.Rect.$ctor1(0.0, 0.0, SimpleDodgeGame.gameplayTexture.width, SimpleDodgeGame.gameplayTexture.height), new pc.Vec2( 0.5, 0.5 ), SimpleDodgeGame.gameplayTexture.width);
                     return SimpleDodgeGame.gameplaySprite;
                 },
                 /*SimpleDodgeGame.GetGameplaySprite:static end.*/
@@ -134,6 +148,7 @@ if ( TRACE ) { TRACE( "SimpleDodgeGame#HasTouchBegan", this ); }
             difficultyRampSeconds: 0,
             sidePadding: 0,
             despawnPadding: 0,
+            spriteMaterial: null,
             obstacles: null,
             gameplayCamera: null,
             complianceHooks: null,
@@ -281,6 +296,9 @@ if ( TRACE ) { TRACE( "SimpleDodgeGame#SpawnObstacle", this ); }
                 renderer.sprite = SimpleDodgeGame.GetGameplaySprite();
                 renderer.color = new pc.Color( 1.0, 0.4, 0.2, 1.0 );
                 renderer.sortingOrder = 8;
+                if (this.spriteMaterial != null) {
+                    renderer.material = this.spriteMaterial;
+                }
 
                 this.obstacles.add(new SimpleDodgeGame.Obstacle(obstacleObject, radius, speed));
             },
@@ -386,6 +404,9 @@ if ( TRACE ) { TRACE( "SimpleDodgeGame#CreatePlayer", this ); }
                 this.playerRenderer.sprite = SimpleDodgeGame.GetGameplaySprite();
                 this.playerRenderer.color = new pc.Color( 0.2, 0.85, 1.0, 1.0 );
                 this.playerRenderer.sortingOrder = 10;
+                if (this.spriteMaterial != null) {
+                    this.playerRenderer.material = this.spriteMaterial;
+                }
             },
             /*SimpleDodgeGame.CreatePlayer end.*/
 
@@ -461,7 +482,7 @@ if ( TRACE ) { TRACE( "SimpleDodgeGame.Obstacle#ctor", this ); }
     /*PlayworksComplianceHooks end.*/
 
     /*SimpleDodgeGame start.*/
-    $m("SimpleDodgeGame", function () { return {"nested":[SimpleDodgeGame.Obstacle],"att":1048833,"a":2,"m":[{"a":2,"isSynthetic":true,"n":".ctor","t":1,"sn":"ctor"},{"a":1,"n":"Awake","t":8,"sn":"Awake","rt":$n[0].Void},{"a":1,"n":"ClearObstacles","t":8,"sn":"ClearObstacles","rt":$n[0].Void},{"a":1,"n":"CreatePlayer","t":8,"sn":"CreatePlayer","rt":$n[0].Void},{"a":1,"n":"GetGameplaySprite","is":true,"t":8,"sn":"GetGameplaySprite","rt":$n[1].Sprite},{"a":1,"n":"GetGameplayZ","t":8,"sn":"GetGameplayZ","rt":$n[0].Single,"box":function ($v) { return Bridge.box($v, System.Single, System.Single.format, System.Single.getHashCode);}},{"a":1,"n":"HandleLose","t":8,"sn":"HandleLose","rt":$n[0].Void},{"a":1,"n":"HandlePlayerMovement","t":8,"sn":"HandlePlayerMovement","rt":$n[0].Void},{"a":1,"n":"HandleSpawning","t":8,"sn":"HandleSpawning","rt":$n[0].Void},{"a":1,"n":"HasTouchBegan","is":true,"t":8,"sn":"HasTouchBegan","rt":$n[0].Boolean,"box":function ($v) { return Bridge.box($v, System.Boolean, System.Boolean.toString);}},{"a":1,"n":"OnDestroy","t":8,"sn":"OnDestroy","rt":$n[0].Void},{"a":1,"n":"ResetRun","t":8,"sn":"ResetRun","rt":$n[0].Void},{"a":1,"n":"SpawnObstacle","t":8,"sn":"SpawnObstacle","rt":$n[0].Void},{"a":1,"n":"TryGetPointerWorldX","t":8,"pi":[{"n":"worldX","out":true,"pt":$n[0].Single,"ps":0}],"sn":"TryGetPointerWorldX","rt":$n[0].Boolean,"p":[$n[0].Single],"box":function ($v) { return Bridge.box($v, System.Boolean, System.Boolean.toString);}},{"a":1,"n":"Update","t":8,"sn":"Update","rt":$n[0].Void},{"a":1,"n":"UpdateBounds","t":8,"sn":"UpdateBounds","rt":$n[0].Void},{"a":1,"n":"UpdateObstaclesAndCollision","t":8,"sn":"UpdateObstaclesAndCollision","rt":$n[0].Void},{"a":1,"n":"bottomBound","t":4,"rt":$n[0].Single,"sn":"bottomBound","box":function ($v) { return Bridge.box($v, System.Single, System.Single.format, System.Single.getHashCode);}},{"a":1,"n":"complianceHooks","t":4,"rt":PlayworksComplianceHooks,"sn":"complianceHooks"},{"at":[new UnityEngine.SerializeFieldAttribute()],"a":1,"n":"despawnPadding","t":4,"rt":$n[0].Single,"sn":"despawnPadding","box":function ($v) { return Bridge.box($v, System.Single, System.Single.format, System.Single.getHashCode);}},{"at":[new UnityEngine.SerializeFieldAttribute()],"a":1,"n":"difficultyRampSeconds","t":4,"rt":$n[0].Single,"sn":"difficultyRampSeconds","box":function ($v) { return Bridge.box($v, System.Single, System.Single.format, System.Single.getHashCode);}},{"a":1,"n":"gameOver","t":4,"rt":$n[0].Boolean,"sn":"gameOver","box":function ($v) { return Bridge.box($v, System.Boolean, System.Boolean.toString);}},{"a":1,"n":"gameplayCamera","t":4,"rt":$n[1].Camera,"sn":"gameplayCamera"},{"a":1,"n":"gameplaySprite","is":true,"t":4,"rt":$n[1].Sprite,"sn":"gameplaySprite"},{"a":1,"n":"gameplayZ","t":4,"rt":$n[0].Single,"sn":"gameplayZ","box":function ($v) { return Bridge.box($v, System.Single, System.Single.format, System.Single.getHashCode);}},{"a":1,"n":"leftBound","t":4,"rt":$n[0].Single,"sn":"leftBound","box":function ($v) { return Bridge.box($v, System.Single, System.Single.format, System.Single.getHashCode);}},{"at":[new UnityEngine.SerializeFieldAttribute()],"a":1,"n":"obstacleMaxRadius","t":4,"rt":$n[0].Single,"sn":"obstacleMaxRadius","box":function ($v) { return Bridge.box($v, System.Single, System.Single.format, System.Single.getHashCode);}},{"at":[new UnityEngine.SerializeFieldAttribute()],"a":1,"n":"obstacleMaxSpeed","t":4,"rt":$n[0].Single,"sn":"obstacleMaxSpeed","box":function ($v) { return Bridge.box($v, System.Single, System.Single.format, System.Single.getHashCode);}},{"at":[new UnityEngine.HeaderAttribute("Obstacles"),new UnityEngine.SerializeFieldAttribute()],"a":1,"n":"obstacleMinRadius","t":4,"rt":$n[0].Single,"sn":"obstacleMinRadius","box":function ($v) { return Bridge.box($v, System.Single, System.Single.format, System.Single.getHashCode);}},{"at":[new UnityEngine.SerializeFieldAttribute()],"a":1,"n":"obstacleMinSpeed","t":4,"rt":$n[0].Single,"sn":"obstacleMinSpeed","box":function ($v) { return Bridge.box($v, System.Single, System.Single.format, System.Single.getHashCode);}},{"a":1,"n":"obstacles","t":4,"rt":$n[2].List$1(SimpleDodgeGame.Obstacle),"sn":"obstacles","ro":true},{"at":[new UnityEngine.SerializeFieldAttribute()],"a":1,"n":"playerBottomOffset","t":4,"rt":$n[0].Single,"sn":"playerBottomOffset","box":function ($v) { return Bridge.box($v, System.Single, System.Single.format, System.Single.getHashCode);}},{"at":[new UnityEngine.SerializeFieldAttribute()],"a":1,"n":"playerMoveSpeed","t":4,"rt":$n[0].Single,"sn":"playerMoveSpeed","box":function ($v) { return Bridge.box($v, System.Single, System.Single.format, System.Single.getHashCode);}},{"at":[new UnityEngine.HeaderAttribute("Player"),new UnityEngine.SerializeFieldAttribute()],"a":1,"n":"playerRadius","t":4,"rt":$n[0].Single,"sn":"playerRadius","box":function ($v) { return Bridge.box($v, System.Single, System.Single.format, System.Single.getHashCode);}},{"a":1,"n":"playerRenderer","t":4,"rt":$n[1].SpriteRenderer,"sn":"playerRenderer"},{"a":1,"n":"playerTransform","t":4,"rt":$n[1].Transform,"sn":"playerTransform"},{"a":1,"n":"pointerDepth","t":4,"rt":$n[0].Single,"sn":"pointerDepth","box":function ($v) { return Bridge.box($v, System.Single, System.Single.format, System.Single.getHashCode);}},{"a":1,"n":"rightBound","t":4,"rt":$n[0].Single,"sn":"rightBound","box":function ($v) { return Bridge.box($v, System.Single, System.Single.format, System.Single.getHashCode);}},{"at":[new UnityEngine.HeaderAttribute("Play Area"),new UnityEngine.SerializeFieldAttribute()],"a":1,"n":"sidePadding","t":4,"rt":$n[0].Single,"sn":"sidePadding","box":function ($v) { return Bridge.box($v, System.Single, System.Single.format, System.Single.getHashCode);}},{"at":[new UnityEngine.SerializeFieldAttribute()],"a":1,"n":"spawnIntervalEnd","t":4,"rt":$n[0].Single,"sn":"spawnIntervalEnd","box":function ($v) { return Bridge.box($v, System.Single, System.Single.format, System.Single.getHashCode);}},{"at":[new UnityEngine.SerializeFieldAttribute()],"a":1,"n":"spawnIntervalStart","t":4,"rt":$n[0].Single,"sn":"spawnIntervalStart","box":function ($v) { return Bridge.box($v, System.Single, System.Single.format, System.Single.getHashCode);}},{"a":1,"n":"spawnTimer","t":4,"rt":$n[0].Single,"sn":"spawnTimer","box":function ($v) { return Bridge.box($v, System.Single, System.Single.format, System.Single.getHashCode);}},{"a":1,"n":"survivalTime","t":4,"rt":$n[0].Single,"sn":"survivalTime","box":function ($v) { return Bridge.box($v, System.Single, System.Single.format, System.Single.getHashCode);}},{"a":1,"n":"topBound","t":4,"rt":$n[0].Single,"sn":"topBound","box":function ($v) { return Bridge.box($v, System.Single, System.Single.format, System.Single.getHashCode);}}]}; }, $n);
+    $m("SimpleDodgeGame", function () { return {"nested":[SimpleDodgeGame.Obstacle],"att":1048833,"a":2,"m":[{"a":2,"isSynthetic":true,"n":".ctor","t":1,"sn":"ctor"},{"a":1,"n":"Awake","t":8,"sn":"Awake","rt":$n[0].Void},{"a":1,"n":"ClearObstacles","t":8,"sn":"ClearObstacles","rt":$n[0].Void},{"a":1,"n":"CreatePlayer","t":8,"sn":"CreatePlayer","rt":$n[0].Void},{"a":1,"n":"GetGameplaySprite","is":true,"t":8,"sn":"GetGameplaySprite","rt":$n[1].Sprite},{"a":1,"n":"GetGameplayZ","t":8,"sn":"GetGameplayZ","rt":$n[0].Single,"box":function ($v) { return Bridge.box($v, System.Single, System.Single.format, System.Single.getHashCode);}},{"a":1,"n":"HandleLose","t":8,"sn":"HandleLose","rt":$n[0].Void},{"a":1,"n":"HandlePlayerMovement","t":8,"sn":"HandlePlayerMovement","rt":$n[0].Void},{"a":1,"n":"HandleSpawning","t":8,"sn":"HandleSpawning","rt":$n[0].Void},{"a":1,"n":"HasTouchBegan","is":true,"t":8,"sn":"HasTouchBegan","rt":$n[0].Boolean,"box":function ($v) { return Bridge.box($v, System.Boolean, System.Boolean.toString);}},{"a":1,"n":"OnDestroy","t":8,"sn":"OnDestroy","rt":$n[0].Void},{"a":1,"n":"ResetRun","t":8,"sn":"ResetRun","rt":$n[0].Void},{"a":1,"n":"SpawnObstacle","t":8,"sn":"SpawnObstacle","rt":$n[0].Void},{"a":1,"n":"TryGetPointerWorldX","t":8,"pi":[{"n":"worldX","out":true,"pt":$n[0].Single,"ps":0}],"sn":"TryGetPointerWorldX","rt":$n[0].Boolean,"p":[$n[0].Single],"box":function ($v) { return Bridge.box($v, System.Boolean, System.Boolean.toString);}},{"a":1,"n":"Update","t":8,"sn":"Update","rt":$n[0].Void},{"a":1,"n":"UpdateBounds","t":8,"sn":"UpdateBounds","rt":$n[0].Void},{"a":1,"n":"UpdateObstaclesAndCollision","t":8,"sn":"UpdateObstaclesAndCollision","rt":$n[0].Void},{"a":1,"n":"bottomBound","t":4,"rt":$n[0].Single,"sn":"bottomBound","box":function ($v) { return Bridge.box($v, System.Single, System.Single.format, System.Single.getHashCode);}},{"a":1,"n":"complianceHooks","t":4,"rt":PlayworksComplianceHooks,"sn":"complianceHooks"},{"at":[new UnityEngine.SerializeFieldAttribute()],"a":1,"n":"despawnPadding","t":4,"rt":$n[0].Single,"sn":"despawnPadding","box":function ($v) { return Bridge.box($v, System.Single, System.Single.format, System.Single.getHashCode);}},{"at":[new UnityEngine.SerializeFieldAttribute()],"a":1,"n":"difficultyRampSeconds","t":4,"rt":$n[0].Single,"sn":"difficultyRampSeconds","box":function ($v) { return Bridge.box($v, System.Single, System.Single.format, System.Single.getHashCode);}},{"a":1,"n":"gameOver","t":4,"rt":$n[0].Boolean,"sn":"gameOver","box":function ($v) { return Bridge.box($v, System.Boolean, System.Boolean.toString);}},{"a":1,"n":"gameplayCamera","t":4,"rt":$n[1].Camera,"sn":"gameplayCamera"},{"a":1,"n":"gameplaySprite","is":true,"t":4,"rt":$n[1].Sprite,"sn":"gameplaySprite"},{"a":1,"n":"gameplayTexture","is":true,"t":4,"rt":$n[1].Texture2D,"sn":"gameplayTexture"},{"a":1,"n":"gameplayZ","t":4,"rt":$n[0].Single,"sn":"gameplayZ","box":function ($v) { return Bridge.box($v, System.Single, System.Single.format, System.Single.getHashCode);}},{"a":1,"n":"leftBound","t":4,"rt":$n[0].Single,"sn":"leftBound","box":function ($v) { return Bridge.box($v, System.Single, System.Single.format, System.Single.getHashCode);}},{"at":[new UnityEngine.SerializeFieldAttribute()],"a":1,"n":"obstacleMaxRadius","t":4,"rt":$n[0].Single,"sn":"obstacleMaxRadius","box":function ($v) { return Bridge.box($v, System.Single, System.Single.format, System.Single.getHashCode);}},{"at":[new UnityEngine.SerializeFieldAttribute()],"a":1,"n":"obstacleMaxSpeed","t":4,"rt":$n[0].Single,"sn":"obstacleMaxSpeed","box":function ($v) { return Bridge.box($v, System.Single, System.Single.format, System.Single.getHashCode);}},{"at":[new UnityEngine.HeaderAttribute("Obstacles"),new UnityEngine.SerializeFieldAttribute()],"a":1,"n":"obstacleMinRadius","t":4,"rt":$n[0].Single,"sn":"obstacleMinRadius","box":function ($v) { return Bridge.box($v, System.Single, System.Single.format, System.Single.getHashCode);}},{"at":[new UnityEngine.SerializeFieldAttribute()],"a":1,"n":"obstacleMinSpeed","t":4,"rt":$n[0].Single,"sn":"obstacleMinSpeed","box":function ($v) { return Bridge.box($v, System.Single, System.Single.format, System.Single.getHashCode);}},{"a":1,"n":"obstacles","t":4,"rt":$n[2].List$1(SimpleDodgeGame.Obstacle),"sn":"obstacles","ro":true},{"at":[new UnityEngine.SerializeFieldAttribute()],"a":1,"n":"playerBottomOffset","t":4,"rt":$n[0].Single,"sn":"playerBottomOffset","box":function ($v) { return Bridge.box($v, System.Single, System.Single.format, System.Single.getHashCode);}},{"at":[new UnityEngine.SerializeFieldAttribute()],"a":1,"n":"playerMoveSpeed","t":4,"rt":$n[0].Single,"sn":"playerMoveSpeed","box":function ($v) { return Bridge.box($v, System.Single, System.Single.format, System.Single.getHashCode);}},{"at":[new UnityEngine.HeaderAttribute("Player"),new UnityEngine.SerializeFieldAttribute()],"a":1,"n":"playerRadius","t":4,"rt":$n[0].Single,"sn":"playerRadius","box":function ($v) { return Bridge.box($v, System.Single, System.Single.format, System.Single.getHashCode);}},{"a":1,"n":"playerRenderer","t":4,"rt":$n[1].SpriteRenderer,"sn":"playerRenderer"},{"a":1,"n":"playerTransform","t":4,"rt":$n[1].Transform,"sn":"playerTransform"},{"a":1,"n":"pointerDepth","t":4,"rt":$n[0].Single,"sn":"pointerDepth","box":function ($v) { return Bridge.box($v, System.Single, System.Single.format, System.Single.getHashCode);}},{"a":1,"n":"rightBound","t":4,"rt":$n[0].Single,"sn":"rightBound","box":function ($v) { return Bridge.box($v, System.Single, System.Single.format, System.Single.getHashCode);}},{"at":[new UnityEngine.HeaderAttribute("Play Area"),new UnityEngine.SerializeFieldAttribute()],"a":1,"n":"sidePadding","t":4,"rt":$n[0].Single,"sn":"sidePadding","box":function ($v) { return Bridge.box($v, System.Single, System.Single.format, System.Single.getHashCode);}},{"at":[new UnityEngine.SerializeFieldAttribute()],"a":1,"n":"spawnIntervalEnd","t":4,"rt":$n[0].Single,"sn":"spawnIntervalEnd","box":function ($v) { return Bridge.box($v, System.Single, System.Single.format, System.Single.getHashCode);}},{"at":[new UnityEngine.SerializeFieldAttribute()],"a":1,"n":"spawnIntervalStart","t":4,"rt":$n[0].Single,"sn":"spawnIntervalStart","box":function ($v) { return Bridge.box($v, System.Single, System.Single.format, System.Single.getHashCode);}},{"a":1,"n":"spawnTimer","t":4,"rt":$n[0].Single,"sn":"spawnTimer","box":function ($v) { return Bridge.box($v, System.Single, System.Single.format, System.Single.getHashCode);}},{"at":[new UnityEngine.HeaderAttribute("Rendering"),new UnityEngine.SerializeFieldAttribute()],"a":1,"n":"spriteMaterial","t":4,"rt":$n[1].Material,"sn":"spriteMaterial"},{"a":1,"n":"survivalTime","t":4,"rt":$n[0].Single,"sn":"survivalTime","box":function ($v) { return Bridge.box($v, System.Single, System.Single.format, System.Single.getHashCode);}},{"a":1,"n":"topBound","t":4,"rt":$n[0].Single,"sn":"topBound","box":function ($v) { return Bridge.box($v, System.Single, System.Single.format, System.Single.getHashCode);}}]}; }, $n);
     /*SimpleDodgeGame end.*/
 
     /*SimpleDodgeGame+Obstacle start.*/
